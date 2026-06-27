@@ -563,16 +563,19 @@ tab_global, tab_profiles, tab_gap, tab_stress, tab_market, tab_snapshots = st.ta
 )
 
 with tab_global:
-    st.sidebar.header("Global Dashboard Filters")
     regions = sorted(latest_model["region_name"].dropna().unique())
-    selected_regions = st.sidebar.multiselect("Regions", regions, default=regions)
-
     statuses = ["low", "moderate", "high"]
-    selected_statuses = st.sidebar.multiselect(
-        "Vulnerability status",
-        statuses,
-        default=statuses,
-    )
+
+    st.markdown("#### Global Dashboard Filters")
+    filter_col1, filter_col2 = st.columns([2, 1])
+    with filter_col1:
+        selected_regions = st.multiselect("Regions", regions, default=regions)
+    with filter_col2:
+        selected_statuses = st.multiselect(
+            "Vulnerability status",
+            statuses,
+            default=statuses,
+        )
 
     filtered = latest_model[
         latest_model["region_name"].isin(selected_regions)
