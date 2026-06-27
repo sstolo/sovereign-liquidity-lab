@@ -6,7 +6,6 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Sovereign Liquidity Lab",
-    page_icon="🌐",
     layout="wide",
 )
 
@@ -223,10 +222,179 @@ def format_ranking(df):
     return display.sort_values("vulnerability_score", ascending=False)
 
 
-st.title("Sovereign Liquidity Lab")
-st.caption(
-    "Public-data monitoring of sovereign external liquidity vulnerability. "
-    "Prototype only: not a credit rating, investment recommendation, or official assessment."
+st.markdown(
+    """
+    <style>
+    :root {
+        --navy: #071523;
+        --navy-2: #0b1f33;
+        --navy-3: #102a43;
+        --silver: #d7dde5;
+        --titanium: #aeb7c2;
+        --platinum: #f2f5f8;
+        --accent: #8fa7bf;
+        --line: rgba(215, 221, 229, 0.20);
+    }
+
+    .stApp {
+        background:
+            radial-gradient(circle at 18% 0%, rgba(87, 116, 145, 0.28), transparent 32%),
+            linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 45%, #050b12 100%);
+        color: var(--platinum);
+    }
+
+    header[data-testid="stHeader"] {
+        background: rgba(7, 21, 35, 0.78);
+        border-bottom: 1px solid var(--line);
+    }
+
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #071523 0%, #0b1f33 100%);
+        border-right: 1px solid var(--line);
+    }
+
+    section[data-testid="stSidebar"] * {
+        color: var(--platinum);
+    }
+
+    .block-container {
+        padding-top: 2.2rem;
+        padding-bottom: 3rem;
+        max-width: 1380px;
+    }
+
+    .sll-hero {
+        border: 1px solid rgba(215, 221, 229, 0.22);
+        border-radius: 8px;
+        padding: 26px 30px;
+        margin-bottom: 18px;
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035)),
+            linear-gradient(135deg, rgba(143,167,191,0.16), transparent);
+        box-shadow: 0 18px 50px rgba(0,0,0,0.24);
+    }
+
+    .sll-kicker {
+        color: var(--titanium);
+        font-size: 0.78rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    .sll-title {
+        color: var(--platinum);
+        font-size: 2.8rem;
+        font-weight: 760;
+        line-height: 1.02;
+        margin-bottom: 10px;
+    }
+
+    .sll-subtitle {
+        color: var(--silver);
+        font-size: 1.02rem;
+        max-width: 1040px;
+        line-height: 1.55;
+    }
+
+    .sll-strip {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+    }
+
+    .sll-chip {
+        color: var(--silver);
+        border: 1px solid rgba(215, 221, 229, 0.22);
+        background: rgba(255,255,255,0.055);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 0.82rem;
+    }
+
+    div[data-testid="stTabs"] button {
+        color: var(--silver);
+        background: rgba(255,255,255,0.035);
+        border-radius: 8px 8px 0 0;
+        border: 1px solid rgba(215, 221, 229, 0.12);
+        padding: 12px 16px;
+        font-weight: 650;
+    }
+
+    div[data-testid="stTabs"] button[aria-selected="true"] {
+        color: #ffffff;
+        background: linear-gradient(180deg, rgba(143,167,191,0.24), rgba(143,167,191,0.08));
+        border-bottom: 1px solid rgba(143,167,191,0.65);
+    }
+
+    div[data-testid="stMetric"] {
+        background: rgba(255,255,255,0.055);
+        border: 1px solid rgba(215, 221, 229, 0.16);
+        border-radius: 8px;
+        padding: 14px 16px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.16);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: var(--titanium);
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: var(--platinum);
+    }
+
+    h1, h2, h3 {
+        color: var(--platinum);
+    }
+
+    p, li, label, span {
+        color: var(--silver);
+    }
+
+    .sll-placeholder {
+        border: 1px solid rgba(215, 221, 229, 0.18);
+        border-radius: 8px;
+        padding: 32px;
+        min-height: 340px;
+        background: rgba(255,255,255,0.045);
+        color: var(--silver);
+    }
+
+    .sll-placeholder h3 {
+        margin-top: 0;
+        color: var(--platinum);
+    }
+
+    .stDataFrame {
+        border: 1px solid rgba(215, 221, 229, 0.14);
+        border-radius: 8px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <div class="sll-hero">
+        <div class="sll-kicker">Sovereign macro-financial surveillance</div>
+        <div class="sll-title">Sovereign Liquidity Lab</div>
+        <div class="sll-subtitle">
+            Public-data analytics for external liquidity, reserve adequacy,
+            short-term external debt coverage, and sovereign vulnerability monitoring.
+            Prototype only: not a credit rating, investment recommendation, or official assessment.
+        </div>
+        <div class="sll-strip">
+            <div class="sll-chip">World Bank API</div>
+            <div class="sll-chip">External Liquidity</div>
+            <div class="sll-chip">Reserve Adequacy</div>
+            <div class="sll-chip">Country Risk Signals</div>
+            <div class="sll-chip">Explainable Scoring</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 with st.spinner("Loading World Bank data and building global model..."):
@@ -239,138 +407,211 @@ if full_model.empty or latest_model.empty:
     )
     st.stop()
 
-st.sidebar.header("Filters")
-regions = sorted(latest_model["region_name"].dropna().unique())
-selected_regions = st.sidebar.multiselect("Regions", regions, default=regions)
-
-statuses = ["low", "moderate", "high"]
-selected_statuses = st.sidebar.multiselect(
-    "Vulnerability status",
-    statuses,
-    default=statuses,
+tab_global, tab_gap, tab_stress, tab_market, tab_snapshots = st.tabs(
+    [
+        "Global Dashboard",
+        "Liquidity Gap",
+        "Stress Lab",
+        "Market Pressure",
+        "Country Snapshots",
+    ]
 )
 
-filtered = latest_model[
-    latest_model["region_name"].isin(selected_regions)
-    & latest_model["vulnerability_status"].isin(selected_statuses)
-].copy()
+with tab_global:
+    st.sidebar.header("Global Dashboard Filters")
+    regions = sorted(latest_model["region_name"].dropna().unique())
+    selected_regions = st.sidebar.multiselect("Regions", regions, default=regions)
 
-ranking = format_ranking(filtered)
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Countries in View", f"{len(filtered):,.0f}")
-col2.metric("Average Score", f"{filtered['vulnerability_score'].mean():.1f}")
-col3.metric("High Vulnerability", f"{(filtered['vulnerability_status'] == 'high').sum():,.0f}")
-col4.metric("Latest Data Year", f"{int(filtered['year'].max())}")
-
-st.subheader("Global External Vulnerability Ranking")
-
-top_n = st.slider("Number of countries shown", min_value=10, max_value=60, value=30)
-top = ranking.head(top_n)
-
-fig = px.bar(
-    top.sort_values("vulnerability_score"),
-    x="vulnerability_score",
-    y="name",
-    color="vulnerability_status",
-    orientation="h",
-    title=f"Top {top_n} Countries by External Vulnerability Score",
-    color_discrete_map={
-        "low": "#2e7d32",
-        "moderate": "#f9a825",
-        "high": "#c62828",
-        "n/a": "#9e9e9e",
-    },
-)
-fig.update_layout(yaxis_title="", xaxis_title="Vulnerability score")
-st.plotly_chart(fig, use_container_width=True)
-
-st.subheader("Regional Summary")
-regional_summary = (
-    filtered.groupby("region_name")
-    .agg(
-        countries=("country", "count"),
-        avg_score=("vulnerability_score", "mean"),
-        median_score=("vulnerability_score", "median"),
-        avg_import_cover=("import_cover_months", "mean"),
-        avg_reserves_st_debt=("reserves_to_st_debt", "mean"),
+    statuses = ["low", "moderate", "high"]
+    selected_statuses = st.sidebar.multiselect(
+        "Vulnerability status",
+        statuses,
+        default=statuses,
     )
-    .reset_index()
-)
-regional_summary["avg_score"] = regional_summary["avg_score"].round(1)
-regional_summary["median_score"] = regional_summary["median_score"].round(1)
-regional_summary["avg_import_cover"] = regional_summary["avg_import_cover"].round(1)
-regional_summary["avg_reserves_st_debt"] = regional_summary[
-    "avg_reserves_st_debt"
-].round(2)
 
-fig_region = px.bar(
-    regional_summary.sort_values("avg_score"),
-    x="avg_score",
-    y="region_name",
-    orientation="h",
-    title="Average External Vulnerability Score by Region",
-)
-fig_region.update_layout(yaxis_title="", xaxis_title="Average vulnerability score")
-st.plotly_chart(fig_region, use_container_width=True)
+    filtered = latest_model[
+        latest_model["region_name"].isin(selected_regions)
+        & latest_model["vulnerability_status"].isin(selected_statuses)
+    ].copy()
 
-st.subheader("Country Monitor")
-country_names = ranking["name"].sort_values().tolist()
-selected_country_name = st.selectbox("Select country", country_names)
-country_row = ranking[ranking["name"] == selected_country_name].iloc[0]
+    ranking = format_ranking(filtered)
 
-cols = st.columns(5)
-cols[0].metric("Score", f"{country_row['vulnerability_score']:.0f}")
-cols[1].metric("Status", str(country_row["vulnerability_status"]).upper())
-cols[2].metric("Import Cover", f"{country_row['import_cover_months']:.1f} months")
-cols[3].metric("Reserves/ST Debt", f"{country_row['reserves_to_st_debt']:.2f}x")
-cols[4].metric("CA Balance", f"{country_row['current_account_gdp']:.1f}% GDP")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Countries in View", f"{len(filtered):,.0f}")
+    col2.metric("Average Score", f"{filtered['vulnerability_score'].mean():.1f}")
+    col3.metric(
+        "High Vulnerability",
+        f"{(filtered['vulnerability_status'] == 'high').sum():,.0f}",
+    )
+    col4.metric("Latest Data Year", f"{int(filtered['year'].max())}")
 
-country_history = full_model[full_model["country"] == country_row["country"]].copy()
-country_history = country_history.dropna(subset=["vulnerability_score"])
+    st.subheader("Global External Vulnerability Ranking")
 
-fig_history = px.line(
-    country_history.sort_values("year"),
-    x="year",
-    y="vulnerability_score",
-    title=f"{selected_country_name}: External Vulnerability Score Over Time",
-)
-fig_history.add_hline(y=30, line_dash="dash", line_color="green")
-fig_history.add_hline(y=60, line_dash="dash", line_color="red")
-st.plotly_chart(fig_history, use_container_width=True)
+    top_n = st.slider("Number of countries shown", min_value=10, max_value=60, value=30)
+    top = ranking.head(top_n)
 
-st.subheader("Full Ranking Table")
-st.dataframe(ranking, use_container_width=True, hide_index=True)
+    fig = px.bar(
+        top.sort_values("vulnerability_score"),
+        x="vulnerability_score",
+        y="name",
+        color="vulnerability_status",
+        orientation="h",
+        title=f"Top {top_n} Countries by External Vulnerability Score",
+        color_discrete_map={
+            "low": "#7eb77f",
+            "moderate": "#c9a74d",
+            "high": "#c85b5b",
+            "n/a": "#9e9e9e",
+        },
+    )
+    fig.update_layout(
+        yaxis_title="",
+        xaxis_title="Vulnerability score",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.03)",
+        font_color="#d7dde5",
+        title_font_color="#f2f5f8",
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-csv = ranking.to_csv(index=False).encode("utf-8")
-st.download_button(
-    "Download ranking as CSV",
-    data=csv,
-    file_name="sovereign_liquidity_global_ranking.csv",
-    mime="text/csv",
-)
+    st.subheader("Regional Summary")
+    regional_summary = (
+        filtered.groupby("region_name")
+        .agg(
+            countries=("country", "count"),
+            avg_score=("vulnerability_score", "mean"),
+            median_score=("vulnerability_score", "median"),
+            avg_import_cover=("import_cover_months", "mean"),
+            avg_reserves_st_debt=("reserves_to_st_debt", "mean"),
+        )
+        .reset_index()
+    )
+    regional_summary["avg_score"] = regional_summary["avg_score"].round(1)
+    regional_summary["median_score"] = regional_summary["median_score"].round(1)
+    regional_summary["avg_import_cover"] = regional_summary["avg_import_cover"].round(1)
+    regional_summary["avg_reserves_st_debt"] = regional_summary[
+        "avg_reserves_st_debt"
+    ].round(2)
 
-with st.expander("Methodology and limitations"):
+    fig_region = px.bar(
+        regional_summary.sort_values("avg_score"),
+        x="avg_score",
+        y="region_name",
+        orientation="h",
+        title="Average External Vulnerability Score by Region",
+        color_discrete_sequence=["#8fa7bf"],
+    )
+    fig_region.update_layout(
+        yaxis_title="",
+        xaxis_title="Average vulnerability score",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.03)",
+        font_color="#d7dde5",
+        title_font_color="#f2f5f8",
+    )
+    st.plotly_chart(fig_region, use_container_width=True)
+
+    st.subheader("Country Monitor")
+    country_names = ranking["name"].sort_values().tolist()
+    selected_country_name = st.selectbox("Select country", country_names)
+    country_row = ranking[ranking["name"] == selected_country_name].iloc[0]
+
+    cols = st.columns(5)
+    cols[0].metric("Score", f"{country_row['vulnerability_score']:.0f}")
+    cols[1].metric("Status", str(country_row["vulnerability_status"]).upper())
+    cols[2].metric("Import Cover", f"{country_row['import_cover_months']:.1f} months")
+    cols[3].metric("Reserves/ST Debt", f"{country_row['reserves_to_st_debt']:.2f}x")
+    cols[4].metric("CA Balance", f"{country_row['current_account_gdp']:.1f}% GDP")
+
+    country_history = full_model[full_model["country"] == country_row["country"]].copy()
+    country_history = country_history.dropna(subset=["vulnerability_score"])
+
+    fig_history = px.line(
+        country_history.sort_values("year"),
+        x="year",
+        y="vulnerability_score",
+        title=f"{selected_country_name}: External Vulnerability Score Over Time",
+        color_discrete_sequence=["#d7dde5"],
+    )
+    fig_history.add_hline(y=30, line_dash="dash", line_color="#7eb77f")
+    fig_history.add_hline(y=60, line_dash="dash", line_color="#c85b5b")
+    fig_history.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(255,255,255,0.03)",
+        font_color="#d7dde5",
+        title_font_color="#f2f5f8",
+    )
+    st.plotly_chart(fig_history, use_container_width=True)
+
+    st.subheader("Full Ranking Table")
+    st.dataframe(ranking, use_container_width=True, hide_index=True)
+
+    csv = ranking.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download ranking as CSV",
+        data=csv,
+        file_name="sovereign_liquidity_global_ranking.csv",
+        mime="text/csv",
+    )
+
+    with st.expander("Methodology and limitations"):
+        st.markdown(
+            """
+            This prototype uses public World Bank data to calculate a transparent external
+            vulnerability score.
+
+            Current indicators:
+
+            - **Import cover:** total reserves divided by monthly imports.
+            - **Reserves / short-term external debt:** reserve coverage of short-term external debt.
+            - **Current account balance:** current account balance as a percent of GDP.
+            - **Baseline liquidity gap:** external financing needs minus usable reserves, after preserving
+              a three-month import-cover reserve floor.
+
+            Composite score:
+
+            - 40% import-cover risk
+            - 40% reserves / short-term external debt risk
+            - 20% current-account risk
+
+            The score is a monitoring indicator, not a credit rating. Data availability varies
+            across countries and years. Some economies may be excluded when core indicators are missing.
+            """
+        )
+
+
+def render_blank_page(title, description):
     st.markdown(
-        """
-        This prototype uses public World Bank data to calculate a transparent external
-        vulnerability score.
+        f"""
+        <div class="sll-placeholder">
+            <h3>{title}</h3>
+            <p>{description}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        Current indicators:
 
-        - **Import cover:** total reserves divided by monthly imports.
-        - **Reserves / short-term external debt:** reserve coverage of short-term external debt.
-        - **Current account balance:** current account balance as a percent of GDP.
-        - **Baseline liquidity gap:** external financing needs minus usable reserves, after preserving
-          a three-month import-cover reserve floor.
+with tab_gap:
+    render_blank_page(
+        "Liquidity Gap",
+        "Reserved for the external financing needs versus usable reserves module.",
+    )
 
-        Composite score:
+with tab_stress:
+    render_blank_page(
+        "Stress Lab",
+        "Reserved for sudden-stop, reserve-drain, FX-shock, and rollover scenarios.",
+    )
 
-        - 40% import-cover risk
-        - 40% reserves / short-term external debt risk
-        - 20% current-account risk
+with tab_market:
+    render_blank_page(
+        "Market Pressure",
+        "Reserved for FX pressure, global funding conditions, DXY, VIX, rates, and spreads.",
+    )
 
-        The score is a monitoring indicator, not a credit rating. Data availability varies
-        across countries and years. Some economies may be excluded when core indicators are missing.
-        """
+with tab_snapshots:
+    render_blank_page(
+        "Country Snapshots",
+        "Reserved for automated one-page country notes and exportable surveillance briefs.",
     )
