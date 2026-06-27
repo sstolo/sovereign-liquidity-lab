@@ -1,4 +1,8 @@
+import base64
+from pathlib import Path
+
 import requests
+import random
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -11,6 +15,8 @@ st.set_page_config(
 
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
+APP_DIR = Path(__file__).parent
+GLOBE_HEADER_PATH = APP_DIR / "assets" / "global-finance-globe-header.png"
 INDICATORS = {
     "FI.RES.TOTL.CD": "reserves_usd",
     "NE.IMP.GNFS.CD": "imports_usd",
@@ -19,6 +25,16 @@ INDICATORS = {
     "NY.GDP.MKTP.CD": "gdp_usd",
     "DT.DOD.DSTC.CD": "short_term_external_debt_usd",
 }
+
+
+def image_data_uri(path):
+    if not path.exists():
+        return ""
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
+GLOBE_HEADER_SRC = image_data_uri(GLOBE_HEADER_PATH)
 
 
 def import_cover_risk_score(x):
@@ -386,7 +402,7 @@ st.markdown(
             Prototype only: not a credit rating, investment recommendation, or official assessment.
         </div>
         <div class="sll-strip">
-            <div class="sll-chip">World Bank API</div>
+            <div class="sll-chip">Global Data</div>
             <div class="sll-chip">External Liquidity</div>
             <div class="sll-chip">Reserve Adequacy</div>
             <div class="sll-chip">Country Risk Signals</div>
@@ -432,7 +448,7 @@ st.markdown(
         background: linear-gradient(90deg, #071523 0%, #0b1f33 58%, #3a4654 100%);
         border: 1px solid #c9d1da;
         border-radius: 8px;
-        padding: 14px 18px;
+        padding: 10px 18px 10px 14px;
         margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
@@ -441,17 +457,34 @@ st.markdown(
         box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
     }
 
+    .sll-brand-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .sll-globe-mark {
+        width: 46px;
+        height: 46px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
+    }
+
     .sll-brand {
         color: #f8fafc;
         font-size: 1.05rem;
         font-weight: 750;
         letter-spacing: 0.02em;
+        line-height: 1.15;
     }
 
     .sll-brand span {
+        display: block;
         color: #cbd5e1;
         font-weight: 500;
-        margin-left: 10px;
+        margin-top: 3px;
         font-size: 0.86rem;
     }
 
@@ -481,13 +514,16 @@ st.markdown(
     </style>
 
     <div class="sll-topbar">
-        <div class="sll-brand">
-            Sovereign Liquidity Lab
-            <span>External Liquidity Surveillance Terminal</span>
+        <div class="sll-brand-wrap">
+            <img class="sll-globe-mark" src="__GLOBE_HEADER_SRC__" alt="3D global finance globe">
+            <div class="sll-brand">
+                Sovereign Liquidity Lab
+                <span>External Liquidity Surveillance Terminal</span>
+            </div>
         </div>
-        <div class="sll-meta">Public data prototype · World Bank API · v0.1</div>
+        <div class="sll-meta">Public data prototype · Global finance data · v0.1</div>
     </div>
-    """,
+    """.replace("__GLOBE_HEADER_SRC__", GLOBE_HEADER_SRC),
     unsafe_allow_html=True,
 )
 
@@ -501,9 +537,10 @@ if full_model.empty or latest_model.empty:
     )
     st.stop()
 
-tab_global, tab_gap, tab_stress, tab_market, tab_snapshots = st.tabs(
+tab_global, tab_profiles, tab_gap, tab_stress, tab_market, tab_snapshots = st.tabs(
     [
         "Global Dashboard",
+        "Country Profiles",
         "Liquidity Gap",
         "Stress Lab",
         "Market Pressure",
@@ -597,34 +634,6 @@ with tab_global:
     )
     st.plotly_chart(fig_region, use_container_width=True)
 
-    st.subheader("Country Monitor")
-    country_names = ranking["name"].sort_values().tolist()
-    selected_country_name = st.selectbox("Select country", country_names)
-    country_row = ranking[ranking["name"] == selected_country_name].iloc[0]
-
-    cols = st.columns(5)
-    cols[0].metric("Score", f"{country_row['vulnerability_score']:.0f}")
-    cols[1].metric("Status", str(country_row["vulnerability_status"]).upper())
-    cols[2].metric("Import Cover", f"{country_row['import_cover_months']:.1f} months")
-    cols[3].metric("Reserves/ST Debt", f"{country_row['reserves_to_st_debt']:.2f}x")
-    cols[4].metric("CA Balance", f"{country_row['current_account_gdp']:.1f}% GDP")
-
-    country_history = full_model[full_model["country"] == country_row["country"]].copy()
-    country_history = country_history.dropna(subset=["vulnerability_score"])
-
-    fig_history = px.line(
-        country_history.sort_values("year"),
-        x="year",
-        y="vulnerability_score",
-        title=f"{selected_country_name}: External Vulnerability Score Over Time",
-        color_discrete_sequence=["#d7dde5"],
-    )
-    fig_history.add_hline(y=30, line_dash="dash", line_color="#7eb77f")
-    fig_history.add_hline(y=60, line_dash="dash", line_color="#c85b5b")
-    fig_history.update_layout(
-    )
-    st.plotly_chart(fig_history, use_container_width=True)
-
     st.subheader("Full Ranking Table")
     st.dataframe(ranking, use_container_width=True, hide_index=True)
 
@@ -660,6 +669,82 @@ with tab_global:
             across countries and years. Some economies may be excluded when core indicators are missing.
             """
         )
+
+
+with tab_profiles:
+    profile_ranking = format_ranking(latest_model)
+    country_names = profile_ranking["name"].sort_values().tolist()
+
+    if (
+        "profile_country_name" not in st.session_state
+        or st.session_state["profile_country_name"] not in country_names
+    ):
+        st.session_state["profile_country_name"] = random.choice(country_names)
+
+    header_col, button_col = st.columns([4, 1])
+    with header_col:
+        st.subheader("Country Profiles")
+    with button_col:
+        if st.button("Random country", use_container_width=True):
+            st.session_state["profile_country_name"] = random.choice(country_names)
+
+    selected_country_name = st.selectbox(
+        "Select country",
+        country_names,
+        index=country_names.index(st.session_state["profile_country_name"]),
+        key="country_profile_select",
+    )
+    st.session_state["profile_country_name"] = selected_country_name
+
+    country_row = profile_ranking[
+        profile_ranking["name"] == selected_country_name
+    ].iloc[0]
+
+    cols = st.columns(5)
+    cols[0].metric("Score", f"{country_row['vulnerability_score']:.0f}")
+    cols[1].metric("Status", str(country_row["vulnerability_status"]).upper())
+    cols[2].metric("Import Cover", f"{country_row['import_cover_months']:.1f} months")
+    cols[3].metric("Reserves/ST Debt", f"{country_row['reserves_to_st_debt']:.2f}x")
+    cols[4].metric("CA Balance", f"{country_row['current_account_gdp']:.1f}% GDP")
+
+    country_history = full_model[full_model["country"] == country_row["country"]].copy()
+    country_history = country_history.dropna(subset=["vulnerability_score"])
+
+    fig_history = px.line(
+        country_history.sort_values("year"),
+        x="year",
+        y="vulnerability_score",
+        title=f"{selected_country_name}: External Vulnerability Score Over Time",
+    )
+    fig_history.add_hline(y=30, line_dash="dash", line_color="green")
+    fig_history.add_hline(y=60, line_dash="dash", line_color="red")
+    st.plotly_chart(fig_history, use_container_width=True)
+
+    profile_table = country_history[
+        [
+            "year",
+            "import_cover_months",
+            "reserves_to_st_debt",
+            "current_account_gdp",
+            "baseline_liquidity_gap_pct_gdp",
+            "vulnerability_score",
+            "vulnerability_status",
+        ]
+    ].copy()
+    profile_table["import_cover_months"] = profile_table["import_cover_months"].round(1)
+    profile_table["reserves_to_st_debt"] = profile_table["reserves_to_st_debt"].round(2)
+    profile_table["current_account_gdp"] = profile_table["current_account_gdp"].round(1)
+    profile_table["baseline_liquidity_gap_pct_gdp"] = profile_table[
+        "baseline_liquidity_gap_pct_gdp"
+    ].round(1)
+    profile_table["vulnerability_score"] = profile_table["vulnerability_score"].round(0)
+
+    st.subheader("Country Indicator History")
+    st.dataframe(
+        profile_table.sort_values("year", ascending=False),
+        use_container_width=True,
+        hide_index=True,
+    )
 
 
 def render_blank_page(title, description):
