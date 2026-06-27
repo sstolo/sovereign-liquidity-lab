@@ -445,16 +445,23 @@ st.markdown(
     }
 
     .sll-topbar {
-        background: linear-gradient(90deg, #071523 0%, #0b1f33 58%, #3a4654 100%);
-        border: 1px solid #c9d1da;
-        border-radius: 8px;
-        padding: 10px 18px 10px 14px;
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        box-sizing: border-box;
+        background: linear-gradient(90deg, #0b3d66 0%, #155a8a 54%, #7f9db7 100%);
+        border-top: 1px solid #bfd1df;
+        border-bottom: 1px solid #9fb6c9;
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+        padding: 10px max(24px, calc((100vw - 1280px) / 2 + 24px));
         margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 18px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10);
+        box-shadow: 0 8px 24px rgba(21, 90, 138, 0.16);
     }
 
     .sll-brand-wrap {
@@ -489,7 +496,7 @@ st.markdown(
     }
 
     .sll-meta {
-        color: #d7dde5;
+        color: #edf6ff;
         font-size: 0.82rem;
         white-space: nowrap;
     }
@@ -499,13 +506,20 @@ st.markdown(
     }
 
     .sll-footer {
+        width: 100vw;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
         margin-top: 26px;
-        padding: 12px 16px;
-        border-radius: 8px;
-        background: linear-gradient(90deg, #071523 0%, #0b1f33 70%, #3a4654 100%);
-        color: #d7dde5;
+        box-sizing: border-box;
+        padding: 12px max(24px, calc((100vw - 1280px) / 2 + 24px));
+        border-radius: 0;
+        background: linear-gradient(90deg, #0b3d66 0%, #155a8a 70%, #7f9db7 100%);
+        color: #edf6ff;
         font-size: 0.82rem;
-        border: 1px solid #c9d1da;
+        border-top: 1px solid #bfd1df;
+        border-bottom: 1px solid #9fb6c9;
+        border-left: 0;
+        border-right: 0;
     }
 
     .sll-footer strong {
@@ -782,3 +796,14 @@ with tab_snapshots:
         "Country Snapshots",
         "Reserved for automated one-page country notes and exportable surveillance briefs.",
     )
+
+st.markdown(
+    """
+    <div class="sll-footer">
+        <strong>Sovereign Liquidity Lab</strong> · Public-data analytical prototype ·
+        External liquidity, reserve adequacy, and sovereign vulnerability monitoring ·
+        Not a credit rating, investment recommendation, or official assessment.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
