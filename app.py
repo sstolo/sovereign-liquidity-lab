@@ -64,10 +64,15 @@ def vulnerability_status(x):
 
 def get_world_bank_pages(url, params=None):
     params = params or {}
-    params = {**params, "format": "json", "per_page": 20000}
-    first = requests.get(url, params=params, timeout=40)
-    first.raise_for_status()
-    payload = first.json()
+    params = {**params, "format": "json", "per_page": 1000}
+
+    try:
+        first = requests.get(url, params=params, timeout=40)
+        if first.status_code != 200:
+            return []
+        payload = first.json()
+    except (requests.RequestException, ValueError):
+        return []
 
     if len(payload) < 2 or payload[1] is None:
         return []
@@ -76,13 +81,18 @@ def get_world_bank_pages(url, params=None):
     rows = payload[1]
 
     for page in range(2, pages + 1):
-        page_response = requests.get(
-            url,
-            params={**params, "page": page},
-            timeout=40,
-        )
-        page_response.raise_for_status()
-        page_payload = page_response.json()
+        try:
+            page_response = requests.get(
+                url,
+                params={**params, "page": page},
+                timeout=40,
+            )
+            if page_response.status_code != 200:
+                continue
+            page_payload = page_response.json()
+        except (requests.RequestException, ValueError):
+            continue
+
         if len(page_payload) > 1 and page_payload[1] is not None:
             rows.extend(page_payload[1])
 
@@ -131,6 +141,9 @@ def build_model():
             model = indicator_df
         else:
             model = model.merge(indicator_df, on=["country", "year"], how="outer")
+
+    if model is None or model.empty:
+        return pd.DataFrame(), pd.DataFrame()
 
     model = model.merge(countries, on="country", how="inner")
 
@@ -218,6 +231,13 @@ st.caption(
 
 with st.spinner("Loading World Bank data and building global model..."):
     full_model, latest_model = build_model()
+
+if full_model.empty or latest_model.empty:
+    st.error(
+        "The app could not retrieve enough data from the World Bank API. "
+        "Please refresh the app in a minute. If the problem persists, the API may be temporarily unavailable."
+    )
+    st.stop()
 
 st.sidebar.header("Filters")
 regions = sorted(latest_model["region_name"].dropna().unique())
