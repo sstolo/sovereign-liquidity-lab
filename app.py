@@ -18,7 +18,7 @@ st.set_page_config(
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
 APP_DIR = Path(__file__).parent
-GLOBE_HEADER_PATH = APP_DIR / "assets" / "global-finance-globe-header.png"
+GLOBE_HEADER_PATH = APP_DIR / "logo.png"
 COUNTRY_NOTES_PATHS = [
     APP_DIR / "country_notes.md",
     APP_DIR / "sovereign_external_liquidity_country_notes.md",
