@@ -17,7 +17,7 @@ st.set_page_config(
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
 APP_DIR = Path(__file__).parent
-GLOBE_HEADER_PATH = APP_DIR / "assets" / "global-finance-globe-header.png"
+GLOBE_HEADER_PATH = APP_DIR / "logo.png"
 INDICATORS = {
     "FI.RES.TOTL.CD": "reserves_usd",
     "NE.IMP.GNFS.CD": "imports_usd",
@@ -683,6 +683,59 @@ st.markdown(
 
     .sll-footer strong {
         color: #ffffff;
+    }
+
+    .stApp,
+    .stMarkdown,
+    .stMarkdown p,
+    .stMarkdown li,
+    label,
+    div[data-testid="stText"],
+    div[data-testid="stDataFrame"],
+    div[data-testid="stMetricLabel"],
+    div[data-testid="stMetricValue"],
+    div[data-testid="stSelectbox"] *,
+    div[data-testid="stMultiSelect"] * {
+        color: #2b3036 !important;
+    }
+
+    h1, h2, h3,
+    .stMarkdown h1,
+    .stMarkdown h2,
+    .stMarkdown h3,
+    div[data-testid="stMarkdownContainer"] h1,
+    div[data-testid="stMarkdownContainer"] h2,
+    div[data-testid="stMarkdownContainer"] h3 {
+        color: #0b3d66 !important;
+    }
+
+    div[data-testid="stTabs"] button p {
+        color: #2b3036 !important;
+    }
+
+    div[data-testid="stTabs"] button[aria-selected="true"] p {
+        color: #0b3d66 !important;
+        font-weight: 750 !important;
+    }
+
+    .sll-placeholder,
+    .sll-placeholder p {
+        color: #2b3036 !important;
+    }
+
+    .sll-placeholder h3 {
+        color: #0b3d66 !important;
+    }
+
+    .sll-topbar,
+    .sll-topbar *,
+    .sll-footer,
+    .sll-footer * {
+        color: #edf6ff !important;
+    }
+
+    .sll-footer strong {
+        color: #ffffff !important;
     }
     </style>
 
