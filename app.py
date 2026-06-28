@@ -6,6 +6,7 @@ import random
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import yfinance as yf
 
 
 st.set_page_config(
@@ -16,7 +17,7 @@ st.set_page_config(
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
 APP_DIR = Path(__file__).parent
-GLOBE_HEADER_PATH = APP_DIR / "logo.png"
+GLOBE_HEADER_PATH = APP_DIR / "assets" / "global-finance-globe-header.png"
 INDICATORS = {
     "FI.RES.TOTL.CD": "reserves_usd",
     "NE.IMP.GNFS.CD": "imports_usd",
@@ -24,6 +25,59 @@ INDICATORS = {
     "BN.CAB.XOKA.CD": "current_account_usd",
     "NY.GDP.MKTP.CD": "gdp_usd",
     "DT.DOD.DSTC.CD": "short_term_external_debt_usd",
+}
+
+FX_TICKERS = {
+    "ARG": ("USDARS=X", False),
+    "ARM": ("USDAMD=X", False),
+    "AUS": ("AUDUSD=X", True),
+    "BRA": ("USDBRL=X", False),
+    "CAN": ("USDCAD=X", False),
+    "CHE": ("USDCHF=X", False),
+    "CHL": ("USDCLP=X", False),
+    "CHN": ("USDCNY=X", False),
+    "COL": ("USDCOP=X", False),
+    "CRI": ("USDCRC=X", False),
+    "CZE": ("USDCZK=X", False),
+    "DOM": ("USDDOP=X", False),
+    "EGY": ("USDEGP=X", False),
+    "EUR": ("EURUSD=X", True),
+    "GBR": ("GBPUSD=X", True),
+    "GEO": ("USDGEL=X", False),
+    "GHA": ("USDGHS=X", False),
+    "HUN": ("USDHUF=X", False),
+    "IDN": ("USDIDR=X", False),
+    "IND": ("USDINR=X", False),
+    "JPN": ("USDJPY=X", False),
+    "KAZ": ("USDKZT=X", False),
+    "KEN": ("USDKES=X", False),
+    "KOR": ("USDKRW=X", False),
+    "MAR": ("USDMAD=X", False),
+    "MEX": ("USDMXN=X", False),
+    "MYS": ("USDMYR=X", False),
+    "NGA": ("USDNGN=X", False),
+    "NOR": ("USDNOK=X", False),
+    "NZL": ("NZDUSD=X", True),
+    "PAK": ("USDPKR=X", False),
+    "PER": ("USDPEN=X", False),
+    "PHL": ("USDPHP=X", False),
+    "POL": ("USDPLN=X", False),
+    "ROU": ("USDRON=X", False),
+    "SWE": ("USDSEK=X", False),
+    "THA": ("USDTHB=X", False),
+    "TUR": ("USDTRY=X", False),
+    "UKR": ("USDUAH=X", False),
+    "URY": ("USDUYU=X", False),
+    "VNM": ("USDVND=X", False),
+    "ZAF": ("USDZAR=X", False),
+}
+
+GLOBAL_MARKET_TICKERS = {
+    "VIX": "^VIX",
+    "US 10Y yield proxy": "^TNX",
+    "Oil WTI": "CL=F",
+    "Gold": "GC=F",
+    "EUR/USD": "EURUSD=X",
 }
 
 
@@ -67,6 +121,16 @@ def current_account_risk_score(x):
     return 100
 
 
+def fx_pressure_risk_score(x):
+    if pd.isna(x):
+        return None
+    if x < 5:
+        return 0
+    if x < 10:
+        return 50
+    return 100
+
+
 def vulnerability_status(x):
     if pd.isna(x):
         return "n/a"
@@ -75,6 +139,101 @@ def vulnerability_status(x):
     if x < 60:
         return "moderate"
     return "high"
+
+
+def get_close_series(ticker, period="3y"):
+    data = yf.download(
+        ticker,
+        period=period,
+        interval="1d",
+        progress=False,
+        auto_adjust=False,
+        threads=False,
+    )
+    if data.empty:
+        return pd.Series(dtype="float64")
+
+    if isinstance(data.columns, pd.MultiIndex):
+        if "Close" not in data.columns.get_level_values(0):
+            return pd.Series(dtype="float64")
+        close = data["Close"].iloc[:, 0]
+    elif "Close" in data.columns:
+        close = data["Close"]
+    elif "Adj Close" in data.columns:
+        close = data["Adj Close"]
+    else:
+        return pd.Series(dtype="float64")
+
+    close = close.dropna()
+    close.name = ticker
+    return close
+
+
+@st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
+def load_monthly_fx_pressure():
+    rows = []
+
+    for country, (ticker, invert) in FX_TICKERS.items():
+        close = get_close_series(ticker)
+        if close.empty:
+            continue
+
+        if invert:
+            close = 1 / close
+
+        monthly = close.resample("M").last().dropna()
+        if len(monthly) < 13:
+            continue
+
+        df = pd.DataFrame(
+            {
+                "date": monthly.index,
+                "country": country,
+                "ticker": ticker,
+                "fx_rate_local_per_usd": monthly.values,
+            }
+        )
+        df["fx_change_1m"] = df["fx_rate_local_per_usd"].pct_change(1) * 100
+        df["fx_change_3m"] = df["fx_rate_local_per_usd"].pct_change(3) * 100
+        df["fx_change_12m"] = df["fx_rate_local_per_usd"].pct_change(12) * 100
+        rows.append(df)
+
+    if not rows:
+        return pd.DataFrame()
+
+    monthly_fx = pd.concat(rows, ignore_index=True)
+    monthly_fx["fx_pressure_risk"] = monthly_fx["fx_change_3m"].apply(
+        fx_pressure_risk_score
+    )
+    return monthly_fx
+
+
+@st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
+def load_global_market_monthly():
+    rows = []
+
+    for label, ticker in GLOBAL_MARKET_TICKERS.items():
+        close = get_close_series(ticker)
+        if close.empty:
+            continue
+        monthly = close.resample("M").last().dropna()
+        if monthly.empty:
+            continue
+        df = pd.DataFrame(
+            {
+                "date": monthly.index,
+                "indicator": label,
+                "ticker": ticker,
+                "value": monthly.values,
+            }
+        )
+        df["change_3m"] = df["value"].pct_change(3) * 100
+        rows.append(df)
+
+    if not rows:
+        return pd.DataFrame()
+
+    return pd.concat(rows, ignore_index=True)
 
 
 def get_world_bank_pages(url, params=None):
@@ -551,10 +710,11 @@ if full_model.empty or latest_model.empty:
     )
     st.stop()
 
-tab_global, tab_profiles, tab_gap, tab_stress, tab_market, tab_snapshots = st.tabs(
+tab_global, tab_profiles, tab_monthly, tab_gap, tab_stress, tab_market, tab_snapshots = st.tabs(
     [
         "Global Dashboard",
         "Country Profiles",
+        "Monthly Pressure",
         "Liquidity Gap",
         "Stress Lab",
         "Market Pressure",
@@ -762,6 +922,203 @@ with tab_profiles:
         use_container_width=True,
         hide_index=True,
     )
+
+
+with tab_monthly:
+    st.subheader("Monthly Pressure")
+    st.caption(
+        "Monthly market-pressure layer for countries with available free FX tickers. "
+        "Positive FX changes mean local-currency depreciation versus the US dollar."
+    )
+
+    with st.spinner("Loading monthly FX and global market data..."):
+        monthly_fx = load_monthly_fx_pressure()
+        global_market = load_global_market_monthly()
+
+    if monthly_fx.empty:
+        st.warning(
+            "Monthly FX data could not be retrieved. Please refresh the app or try again later."
+        )
+    else:
+        monthly_latest = (
+            monthly_fx.dropna(subset=["fx_change_3m"])
+            .sort_values(["country", "date"])
+            .groupby("country")
+            .tail(1)
+            .copy()
+        )
+
+        monthly_panel = latest_model.merge(
+            monthly_latest[
+                [
+                    "country",
+                    "date",
+                    "ticker",
+                    "fx_rate_local_per_usd",
+                    "fx_change_1m",
+                    "fx_change_3m",
+                    "fx_change_12m",
+                    "fx_pressure_risk",
+                ]
+            ],
+            on="country",
+            how="inner",
+        )
+
+        monthly_panel["monthly_watch_score"] = (
+            0.6 * monthly_panel["vulnerability_score"]
+            + 0.4 * monthly_panel["fx_pressure_risk"]
+        )
+        monthly_panel["monthly_watch_status"] = monthly_panel[
+            "monthly_watch_score"
+        ].apply(vulnerability_status)
+
+        covered = monthly_panel["country"].nunique()
+        structural = latest_model["country"].nunique()
+        high_fx_pressure = (monthly_panel["fx_pressure_risk"] == 100).sum()
+        latest_month = monthly_panel["date"].max().strftime("%b %Y")
+
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Monthly Coverage", f"{covered} / {structural}")
+        m2.metric("Latest Month", latest_month)
+        m3.metric("High FX Pressure", f"{high_fx_pressure:,.0f}")
+        m4.metric(
+            "Average 3M FX Move",
+            f"{monthly_panel['fx_change_3m'].mean():.1f}%",
+        )
+
+        st.markdown("#### Countries With Highest 3M FX Depreciation")
+        top_limit = min(50, len(monthly_panel))
+        top_min = min(10, top_limit)
+        top_default = min(25, top_limit)
+        fx_top_n = st.slider(
+            "Number of countries shown",
+            min_value=top_min,
+            max_value=top_limit,
+            value=top_default,
+            key="monthly_fx_top_n",
+        )
+        fx_top = monthly_panel.sort_values("fx_change_3m", ascending=False).head(
+            fx_top_n
+        )
+
+        fig_fx = px.bar(
+            fx_top.sort_values("fx_change_3m"),
+            x="fx_change_3m",
+            y="name",
+            color="fx_pressure_risk",
+            orientation="h",
+            title=f"Top {fx_top_n} Countries by 3M FX Depreciation vs USD",
+            color_continuous_scale=["#7eb77f", "#c9a74d", "#c85b5b"],
+        )
+        fig_fx.add_vline(x=5, line_dash="dash", line_color="orange")
+        fig_fx.add_vline(x=10, line_dash="dash", line_color="red")
+        fig_fx.update_layout(yaxis_title="", xaxis_title="3M FX change, percent")
+        st.plotly_chart(fig_fx, use_container_width=True)
+
+        st.markdown("#### Structural Vulnerability + Monthly FX Pressure")
+        watch_top = monthly_panel.sort_values(
+            "monthly_watch_score", ascending=False
+        ).head(fx_top_n)
+
+        fig_watch = px.bar(
+            watch_top.sort_values("monthly_watch_score"),
+            x="monthly_watch_score",
+            y="name",
+            color="monthly_watch_status",
+            orientation="h",
+            title="Monthly Watch Score",
+            color_discrete_map={
+                "low": "#7eb77f",
+                "moderate": "#c9a74d",
+                "high": "#c85b5b",
+                "n/a": "#9e9e9e",
+            },
+        )
+        fig_watch.add_vline(x=30, line_dash="dash", line_color="green")
+        fig_watch.add_vline(x=60, line_dash="dash", line_color="red")
+        fig_watch.update_layout(yaxis_title="", xaxis_title="Monthly watch score")
+        st.plotly_chart(fig_watch, use_container_width=True)
+
+        st.markdown("#### Country Monthly FX Trend")
+        monthly_country_names = monthly_panel["name"].sort_values().tolist()
+        default_monthly_country = (
+            "Turkey" if "Turkey" in monthly_country_names else monthly_country_names[0]
+        )
+        selected_monthly_country = st.selectbox(
+            "Select country",
+            monthly_country_names,
+            index=monthly_country_names.index(default_monthly_country),
+            key="monthly_country_select",
+        )
+        selected_country_code = monthly_panel.loc[
+            monthly_panel["name"] == selected_monthly_country, "country"
+        ].iloc[0]
+
+        fx_history = monthly_fx[monthly_fx["country"] == selected_country_code].copy()
+        fig_country_fx = px.line(
+            fx_history.sort_values("date"),
+            x="date",
+            y="fx_change_3m",
+            title=f"{selected_monthly_country}: 3M FX Depreciation vs USD",
+        )
+        fig_country_fx.add_hline(y=5, line_dash="dash", line_color="orange")
+        fig_country_fx.add_hline(y=10, line_dash="dash", line_color="red")
+        fig_country_fx.update_layout(xaxis_title="", yaxis_title="3M FX change, percent")
+        st.plotly_chart(fig_country_fx, use_container_width=True)
+
+        monthly_table = monthly_panel[
+            [
+                "country",
+                "name",
+                "region_name",
+                "date",
+                "ticker",
+                "fx_change_1m",
+                "fx_change_3m",
+                "fx_change_12m",
+                "vulnerability_score",
+                "fx_pressure_risk",
+                "monthly_watch_score",
+                "monthly_watch_status",
+            ]
+        ].copy()
+        monthly_table["date"] = monthly_table["date"].dt.strftime("%Y-%m")
+        for col in [
+            "fx_change_1m",
+            "fx_change_3m",
+            "fx_change_12m",
+            "vulnerability_score",
+            "monthly_watch_score",
+        ]:
+            monthly_table[col] = monthly_table[col].round(1)
+
+        st.markdown("#### Monthly Coverage Table")
+        st.dataframe(
+            monthly_table.sort_values("monthly_watch_score", ascending=False),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        if not global_market.empty:
+            st.markdown("#### Global Market Backdrop")
+            indicators = sorted(global_market["indicator"].unique())
+            selected_global_indicator = st.selectbox(
+                "Global indicator",
+                indicators,
+                key="global_market_indicator_select",
+            )
+            global_history = global_market[
+                global_market["indicator"] == selected_global_indicator
+            ].copy()
+            fig_global = px.line(
+                global_history.sort_values("date"),
+                x="date",
+                y="value",
+                title=f"{selected_global_indicator}: Monthly Level",
+            )
+            fig_global.update_layout(xaxis_title="", yaxis_title="")
+            st.plotly_chart(fig_global, use_container_width=True)
 
 
 def render_blank_page(title, description):
