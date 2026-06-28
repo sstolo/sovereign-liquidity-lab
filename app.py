@@ -18,7 +18,8 @@ st.set_page_config(
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
 APP_DIR = Path(__file__).parent
-GLOBE_HEADER_PATH = APP_DIR / "logo.png"
+LOGO_PATH = APP_DIR / "logo.png"
+GLOBE_HEADER_PATH = APP_DIR / "assets" / "global-finance-globe-header.png"
 COUNTRY_NOTES_PATHS = [
     APP_DIR / "country_notes.md",
     APP_DIR / "sovereign_external_liquidity_country_notes.md",
@@ -94,6 +95,7 @@ def image_data_uri(path):
 
 
 GLOBE_HEADER_SRC = image_data_uri(GLOBE_HEADER_PATH)
+LOGO_SRC = image_data_uri(LOGO_PATH) or GLOBE_HEADER_SRC
 
 
 def import_cover_risk_score(x):
@@ -429,6 +431,10 @@ def load_country_notes():
     return notes
 
 
+def render_country_note_markdown(text):
+    return re.sub(r"(?<!\\)\$", r"\\$", text)
+
+
 st.markdown(
     """
     <style>
@@ -609,7 +615,12 @@ st.markdown(
     <style>
     .stApp {
         background: #ffffff !important;
-        color: #1f2937 !important;
+        color: #2f343a !important;
+        font-family: "Inter", "Source Sans Pro", Arial, sans-serif !important;
+    }
+
+    html, body, [class*="css"] {
+        font-family: "Inter", "Source Sans Pro", Arial, sans-serif !important;
     }
 
     header[data-testid="stHeader"] {
@@ -629,6 +640,70 @@ st.markdown(
     .block-container {
         padding-top: 1.5rem !important;
         max-width: 1280px !important;
+    }
+
+    h1, h2, h3, h4,
+    div[data-testid="stMarkdownContainer"] h1,
+    div[data-testid="stMarkdownContainer"] h2,
+    div[data-testid="stMarkdownContainer"] h3,
+    div[data-testid="stMarkdownContainer"] h4 {
+        color: #0b3d66 !important;
+        font-family: "Inter", "Source Sans Pro", Arial, sans-serif !important;
+        font-style: normal !important;
+        font-weight: 760 !important;
+        letter-spacing: 0 !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] h1 {
+        font-size: 2.05rem !important;
+        line-height: 1.18 !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] h2 {
+        font-size: 1.55rem !important;
+        line-height: 1.24 !important;
+        margin-top: 1.4rem !important;
+        margin-bottom: 0.55rem !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] h3,
+    div[data-testid="stMarkdownContainer"] h4 {
+        font-size: 1.22rem !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] p,
+    div[data-testid="stMarkdownContainer"] li,
+    div[data-testid="stMarkdownContainer"] span,
+    div[data-testid="stMarkdownContainer"] label {
+        color: #2f343a !important;
+        font-family: "Inter", "Source Sans Pro", Arial, sans-serif !important;
+        font-style: normal !important;
+        font-weight: 400 !important;
+        line-height: 1.62 !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] strong {
+        color: #222831 !important;
+        font-weight: 700 !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] em {
+        color: #2f343a !important;
+        font-style: normal !important;
+    }
+
+    div[data-testid="stMetricLabel"],
+    div[data-testid="stMetricLabel"] p {
+        color: #475569 !important;
+    }
+
+    div[data-testid="stMetricValue"],
+    div[data-testid="stMetricValue"] p {
+        color: #0b3d66 !important;
+    }
+
+    .stDataFrame, div[data-testid="stDataFrame"] {
+        color: #2f343a !important;
     }
 
     .sll-hero {
@@ -680,7 +755,7 @@ st.markdown(
 
     .sll-brand span {
         display: block;
-        color: #cbd5e1;
+        color: #edf6ff !important;
         font-weight: 500;
         margin-top: 3px;
         font-size: 0.86rem;
@@ -692,8 +767,21 @@ st.markdown(
         white-space: nowrap;
     }
 
+    .sll-topbar,
+    .sll-topbar * ,
+    .sll-footer,
+    .sll-footer * {
+        font-family: "Inter", "Source Sans Pro", Arial, sans-serif !important;
+        font-style: normal !important;
+    }
+
     div[data-testid="stTabs"] button {
         font-weight: 650;
+        color: #2f343a !important;
+    }
+
+    div[data-testid="stTabs"] button[aria-selected="true"] {
+        color: #0b3d66 !important;
     }
 
     .sll-footer {
@@ -720,7 +808,7 @@ st.markdown(
 
     <div class="sll-topbar">
         <div class="sll-brand-wrap">
-            <img class="sll-globe-mark" src="__GLOBE_HEADER_SRC__" alt="3D global finance globe">
+            <img class="sll-globe-mark" src="__LOGO_SRC__" alt="Sovereign Liquidity Lab logo">
             <div class="sll-brand">
                 Sovereign Liquidity Lab
                 <span>External Liquidity Surveillance Terminal</span>
@@ -728,7 +816,7 @@ st.markdown(
         </div>
         <div class="sll-meta">Public data prototype · Global finance data · v0.1</div>
     </div>
-    """.replace("__GLOBE_HEADER_SRC__", GLOBE_HEADER_SRC),
+    """.replace("__LOGO_SRC__", LOGO_SRC),
     unsafe_allow_html=True,
 )
 
@@ -960,7 +1048,7 @@ with tab_profiles:
     selected_iso3 = country_row["country"]
 
     if selected_iso3 in country_notes:
-        st.markdown(country_notes[selected_iso3]["body"])
+        st.markdown(render_country_note_markdown(country_notes[selected_iso3]["body"]))
     else:
         st.info("No analytical country note is available yet for this country.")
 
