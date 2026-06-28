@@ -181,7 +181,7 @@ def load_monthly_fx_pressure():
         if invert:
             close = 1 / close
 
-        monthly = close.resample("M").last().dropna()
+        monthly = close.resample("ME").last().dropna()
         if len(monthly) < 13:
             continue
 
@@ -216,7 +216,7 @@ def load_global_market_monthly():
         close = get_close_series(ticker)
         if close.empty:
             continue
-        monthly = close.resample("M").last().dropna()
+        monthly = close.resample("ME").last().dropna()
         if monthly.empty:
             continue
         df = pd.DataFrame(
