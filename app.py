@@ -16,7 +16,7 @@ st.set_page_config(
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
 APP_DIR = Path(__file__).parent
-GLOBE_HEADER_PATH = APP_DIR / "assets" / "logo.png"
+GLOBE_HEADER_PATH = APP_DIR / "logo.png"
 INDICATORS = {
     "FI.RES.TOTL.CD": "reserves_usd",
     "NE.IMP.GNFS.CD": "imports_usd",
