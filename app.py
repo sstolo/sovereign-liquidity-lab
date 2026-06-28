@@ -1,4 +1,5 @@
 import base64
+import re
 from pathlib import Path
 
 import requests
@@ -17,7 +18,11 @@ st.set_page_config(
 
 COUNTRY_URL = "https://api.worldbank.org/v2/country"
 APP_DIR = Path(__file__).parent
-GLOBE_HEADER_PATH = APP_DIR / "logo.png"
+GLOBE_HEADER_PATH = APP_DIR / "assets" / "global-finance-globe-header.png"
+COUNTRY_NOTES_PATHS = [
+    APP_DIR / "country_notes.md",
+    APP_DIR / "sovereign_external_liquidity_country_notes.md",
+]
 INDICATORS = {
     "FI.RES.TOTL.CD": "reserves_usd",
     "NE.IMP.GNFS.CD": "imports_usd",
@@ -397,6 +402,33 @@ def format_ranking(df):
     return display.sort_values("vulnerability_score", ascending=False)
 
 
+@st.cache_data(show_spinner=False)
+def load_country_notes():
+    country_notes_path = next(
+        (path for path in COUNTRY_NOTES_PATHS if path.exists()),
+        None,
+    )
+
+    if country_notes_path is None:
+        return {}
+
+    text = country_notes_path.read_text(encoding="utf-8")
+    pattern = (
+        r"<!--\s*COUNTRY:\s*([A-Z]{3})\s*\|\s*(.*?)\s*-->\s*"
+        r"(.*?)(?=<!--\s*COUNTRY:\s*[A-Z]{3}\s*\|.*?-->|\Z)"
+    )
+    matches = re.findall(pattern, text, flags=re.S)
+
+    notes = {}
+    for iso3, name, body in matches:
+        notes[iso3.strip()] = {
+            "name": name.strip(),
+            "body": body.strip(),
+        }
+
+    return notes
+
+
 st.markdown(
     """
     <style>
@@ -684,59 +716,6 @@ st.markdown(
     .sll-footer strong {
         color: #ffffff;
     }
-
-    .stApp,
-    .stMarkdown,
-    .stMarkdown p,
-    .stMarkdown li,
-    label,
-    div[data-testid="stText"],
-    div[data-testid="stDataFrame"],
-    div[data-testid="stMetricLabel"],
-    div[data-testid="stMetricValue"],
-    div[data-testid="stSelectbox"] *,
-    div[data-testid="stMultiSelect"] * {
-        color: #2b3036 !important;
-    }
-
-    h1, h2, h3,
-    .stMarkdown h1,
-    .stMarkdown h2,
-    .stMarkdown h3,
-    div[data-testid="stMarkdownContainer"] h1,
-    div[data-testid="stMarkdownContainer"] h2,
-    div[data-testid="stMarkdownContainer"] h3 {
-        color: #0b3d66 !important;
-    }
-
-    div[data-testid="stTabs"] button p {
-        color: #2b3036 !important;
-    }
-
-    div[data-testid="stTabs"] button[aria-selected="true"] p {
-        color: #0b3d66 !important;
-        font-weight: 750 !important;
-    }
-
-    .sll-placeholder,
-    .sll-placeholder p {
-        color: #2b3036 !important;
-    }
-
-    .sll-placeholder h3 {
-        color: #0b3d66 !important;
-    }
-
-    .sll-topbar,
-    .sll-topbar *,
-    .sll-footer,
-    .sll-footer * {
-        color: #edf6ff !important;
-    }
-
-    .sll-footer strong {
-        color: #ffffff !important;
-    }
     </style>
 
     <div class="sll-topbar">
@@ -975,6 +954,15 @@ with tab_profiles:
         use_container_width=True,
         hide_index=True,
     )
+
+    st.subheader("Analytical Country Note")
+    country_notes = load_country_notes()
+    selected_iso3 = country_row["country"]
+
+    if selected_iso3 in country_notes:
+        st.markdown(country_notes[selected_iso3]["body"])
+    else:
+        st.info("No analytical country note is available yet for this country.")
 
 
 with tab_monthly:
